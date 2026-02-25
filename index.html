@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>~/portfolio</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --surface: #0f1218;
+    --border: #1e2530;
+    --green: #00ff88;
+    --green-dim: #00cc6a;
+    --cyan: #00d4ff;
+    --yellow: #ffd700;
+    --red: #ff4757;
+    --purple: #b57bee;
+    --orange: #ff8c42;
+    --text: #c9d1d9;
+    --text-dim: #6e7681;
+    --text-bright: #e6edf3;
+    --prompt-color: #00ff88;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 80% 40% at 50% 0%, rgba(0,255,136,0.04) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 30% at 80% 80%, rgba(0,212,255,0.03) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Scanline effect */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  .terminal-window {
+    width: 100%;
+    max-width: 860px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 
+      0 0 0 1px rgba(0,255,136,0.05),
+      0 24px 80px rgba(0,0,0,0.8),
+      0 0 60px rgba(0,255,136,0.03);
+    position: relative;
+    z-index: 1;
+  }
+
+  .terminal-titlebar {
+    background: #131820;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+    user-select: none;
+  }
+
+  .dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot-red { background: #ff5f57; }
+  .dot-yellow { background: #ffbd2e; }
+  .dot-green { background: #28c840; }
+
+  .terminal-title {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-left: auto;
+    margin-right: auto;
+    letter-spacing: 0.05em;
+  }
+
+  .terminal-body {
+    padding: 20px 24px;
+    min-height: 520px;
+    max-height: 80vh;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+  }
+
+  .terminal-body::-webkit-scrollbar { width: 4px; }
+  .terminal-body::-webkit-scrollbar-track { background: transparent; }
+  .terminal-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .line {
+    line-height: 1.7;
+    font-size: 13.5px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .line + .line { margin-top: 1px; }
+
+  .prompt-line {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-top: 14px;
+  }
+
+  .prompt {
+    color: var(--green);
+    flex-shrink: 0;
+    font-size: 13.5px;
+  }
+
+  .prompt .user { color: var(--cyan); }
+  .prompt .at { color: var(--text-dim); }
+  .prompt .host { color: var(--purple); }
+  .prompt .path { color: var(--yellow); }
+  .prompt .arrow { color: var(--green); }
+
+  #input-line {
+    display: flex;
+    align-items: center;
+    margin-top: 14px;
+  }
+
+  #cmd-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-bright);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    flex: 1;
+    caret-color: var(--green);
+    padding: 0;
+    margin-left: 2px;
+  }
+
+  .cursor {
+    display: inline-block;
+    width: 8px;
+    height: 15px;
+    background: var(--green);
+    animation: blink 1s step-end infinite;
+    vertical-align: middle;
+    margin-left: 1px;
+    border-radius: 1px;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* Output styles */
+  .c-green { color: var(--green); }
+  .c-cyan { color: var(--cyan); }
+  .c-yellow { color: var(--yellow); }
+  .c-red { color: var(--red); }
+  .c-purple { color: var(--purple); }
+  .c-orange { color: var(--orange); }
+  .c-dim { color: var(--text-dim); }
+  .c-bright { color: var(--text-bright); }
+  .c-white { color: #fff; }
+
+  .bold { font-weight: 700; }
+  .indent { padding-left: 24px; }
+  .indent2 { padding-left: 48px; }
+
+  .section-header {
+    color: var(--cyan);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(0,212,255,0.2);
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+    margin-top: 4px;
+  }
+
+  .tag {
+    display: inline-block;
+    background: rgba(0,255,136,0.08);
+    border: 1px solid rgba(0,255,136,0.2);
+    color: var(--green);
+    font-size: 11px;
+    padding: 1px 7px;
+    border-radius: 3px;
+    margin: 2px 2px;
+  }
+
+  .tag.blue {
+    background: rgba(0,212,255,0.08);
+    border-color: rgba(0,212,255,0.2);
+    color: var(--cyan);
+  }
+
+  .tag.yellow {
+    background: rgba(255,215,0,0.08);
+    border-color: rgba(255,215,0,0.2);
+    color: var(--yellow);
+  }
+
+  .tag.purple {
+    background: rgba(181,123,238,0.08);
+    border-color: rgba(181,123,238,0.2);
+    color: var(--purple);
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 12px 0;
+  }
+
+  .metric {
+    color: var(--orange);
+    font-weight: 700;
+  }
+
+  .ascii-art {
+    color: var(--green);
+    font-size: 11px;
+    line-height: 1.3;
+    opacity: 0.7;
+  }
+
+  .help-cmd {
+    display: inline-block;
+    min-width: 220px;
+    color: var(--yellow);
+    font-weight: 500;
+  }
+
+  .typewriter {
+    overflow: hidden;
+    white-space: nowrap;
+    animation: typing 0.4s steps(40) forwards;
+  }
+
+  @keyframes typing {
+    from { max-width: 0; }
+    to { max-width: 100%; }
+  }
+
+  .fade-in {
+    animation: fadeIn 0.3s ease forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .progress-bar {
+    display: inline-block;
+    height: 6px;
+    background: var(--green);
+    border-radius: 3px;
+    animation: grow 1s ease forwards;
+  }
+
+  @keyframes grow {
+    from { width: 0; }
+  }
+
+  /* ── Recruiter hint panel ── */
+  .hint-panel {
+    width: 100%;
+    max-width: 860px;
+    margin-top: 14px;
+    background: rgba(15,18,24,0.85);
+    border: 1px solid rgba(0,212,255,0.15);
+    border-radius: 10px;
+    padding: 14px 20px 12px;
+    position: relative;
+    z-index: 1;
+    backdrop-filter: blur(6px);
+  }
+
+  .hint-label {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    opacity: 0.7;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .hint-label::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--cyan);
+    opacity: 0.6;
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  .hint-label .dismiss {
+    margin-left: auto;
+    cursor: pointer;
+    opacity: 0.4;
+    font-size: 11px;
+    transition: opacity 0.2s;
+    color: var(--text-dim);
+    user-select: none;
+  }
+  .hint-label .dismiss:hover { opacity: 0.9; }
+
+  .hint-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .hint-btn {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
+    color: var(--text-bright);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  .hint-btn:hover {
+    background: rgba(0,212,255,0.07);
+    border-color: rgba(0,212,255,0.3);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+
+  .hint-btn:active { transform: translateY(0); }
+
+  .hint-btn .btn-icon {
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  .hint-btn .btn-cmd {
+    color: var(--yellow);
+    font-size: 11px;
+    opacity: 0.6;
+  }
+
+  .hint-panel.hidden {
+    display: none;
+  }
+
+  /* Mobile */
+  @media (max-width: 600px) {
+    body { padding: 10px; }
+    .terminal-body { padding: 14px 16px; font-size: 12px; }
+    .line, .prompt, #cmd-input { font-size: 12px; }
+    .hint-btn { font-size: 11px; padding: 5px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="terminal-window">
+  <div class="terminal-titlebar">
+    <div class="dot dot-red"></div>
+    <div class="dot dot-yellow"></div>
+    <div class="dot dot-green"></div>
+    <span class="terminal-title">visitor@portfolio — bash — 80×24</span>
+  </div>
+  <div class="terminal-body" id="terminal-body">
+    <div id="output"></div>
+    <div id="input-line">
+      <span class="prompt">
+        <span class="user">visitor</span><span class="at">@</span><span class="host">portfolio</span><span style="color:var(--text-dim)">:</span><span class="path" id="current-path">~</span><span class="arrow">$ </span>
+      </span>
+      <input type="text" id="cmd-input" autofocus autocomplete="off" spellcheck="false" placeholder="">
+    </div>
+  </div>
+</div>
+
+<!-- Recruiter hint panel -->
+<div class="hint-panel" id="hint-panel">
+  <div class="hint-label">
+    👋 Not a developer? Click any button below to explore
+    <span class="dismiss" id="dismiss-hint" title="Dismiss">✕ dismiss</span>
+  </div>
+  <div class="hint-buttons">
+    <button class="hint-btn" data-cmd="whoami">
+      <span class="btn-icon">🙋</span> About Me <span class="btn-cmd">whoami</span>
+    </button>
+    <button class="hint-btn" data-cmd="cd work-experience">
+      <span class="btn-icon">💼</span> Work Experience <span class="btn-cmd">cd work-experience</span>
+    </button>
+    <button class="hint-btn" data-cmd="cat paypal">
+      <span class="btn-icon">🏢</span> Current Role · PayPal <span class="btn-cmd">cat paypal</span>
+    </button>
+    <button class="hint-btn" data-cmd="cat john-deere">
+      <span class="btn-icon">🚜</span> John Deere <span class="btn-cmd">cat john-deere</span>
+    </button>
+    <button class="hint-btn" data-cmd="cat accenture">
+      <span class="btn-icon">📐</span> Accenture <span class="btn-cmd">cat accenture</span>
+    </button>
+    <button class="hint-btn" data-cmd="cd skills">
+      <span class="btn-icon">⚙️</span> Tech Skills <span class="btn-cmd">cd skills</span>
+    </button>
+    <button class="hint-btn" data-cmd="cd open-source">
+      <span class="btn-icon">🌐</span> Open Source <span class="btn-cmd">cd open-source</span>
+    </button>
+    <button class="hint-btn" data-cmd="cd projects">
+      <span class="btn-icon">🔬</span> Projects <span class="btn-cmd">cd projects</span>
+    </button>
+  </div>
+</div>
+
+<script>
+const output = document.getElementById('output');
+const input = document.getElementById('cmd-input');
+const body = document.getElementById('terminal-body');
+const pathEl = document.getElementById('current-path');
+
+let currentPath = '~';
+let cmdHistory = [];
+let histIdx = -1;
+
+const BOOT_SEQUENCE = [
+  { text: `<span class="ascii-art">  ██████╗  ██████╗ ██████╗ ████████╗███████╗ ██████╗ ██╗     ██╗ ██████╗ \n  ██╔══██╗██╔═══██╗██╔══██╗╚══██╔══╝██╔════╝██╔═══██╗██║     ██║██╔═══██╗\n  ██████╔╝██║   ██║██████╔╝   ██║   █████╗  ██║   ██║██║     ██║██║   ██║\n  ██╔═══╝ ██║   ██║██╔══██╗   ██║   ██╔══╝  ██║   ██║██║     ██║██║   ██║\n  ██║     ╚██████╔╝██║  ██║   ██║   ██║     ╚██████╔╝███████╗██║╚██████╔╝\n  ╚═╝      ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚═╝      ╚═════╝ ╚══════╝╚═╝ ╚═════╝ </span>`, delay: 0 },
+  { text: `<span class="c-dim">──────────────────────────────────────────────────────────────────────────</span>`, delay: 300 },
+  { text: `<span class="c-bright bold">  Backend Software Engineer</span>  <span class="c-dim">·</span>  <span class="c-cyan">PayPal</span> <span class="c-dim">·</span> <span class="c-purple">MS Computer Science, UB</span>`, delay: 450 },
+  { text: `<span class="c-dim">  Java · BigQuery · Oracle · Spring Boot · AWS · Kafka · Kubernetes</span>`, delay: 600 },
+  { text: `<span class="c-dim">──────────────────────────────────────────────────────────────────────────</span>`, delay: 750 },
+  { text: ``, delay: 900 },
+  { text: `<span class="c-green bold">  System ready.</span> <span class="c-dim">Type</span> <span class="c-yellow">help</span> <span class="c-dim">to see available commands.</span>`, delay: 1000 },
+  { text: ``, delay: 1100 },
+  { text: `<span class="c-dim">  Quick navigation:</span>`, delay: 1150 },
+  { text: `    <span class="help-cmd">cd work-experience</span>  <span class="c-dim">→ Professional history</span>`, delay: 1250 },
+  { text: `    <span class="help-cmd">cd open-source</span>       <span class="c-dim">→ CNCF / Kubernetes contributions</span>`, delay: 1350 },
+  { text: `    <span class="help-cmd">cd projects</span>          <span class="c-dim">→ Personal & academic builds</span>`, delay: 1450 },
+  { text: `    <span class="help-cmd">cd skills</span>            <span class="c-dim">→ Tech stack & expertise</span>`, delay: 1550 },
+  { text: `    <span class="help-cmd">whoami</span>               <span class="c-dim">→ About me</span>`, delay: 1650 },
+  { text: ``, delay: 1700 },
+];
+
+const COMMANDS = {
+  help: () => [
+    ``,
+    `<span class="section-header">Available Commands</span>`,
+    ``,
+    `  <span class="help-cmd">cd work-experience</span>  <span class="c-dim">List all companies & roles</span>`,
+    `  <span class="help-cmd">cd open-source</span>       <span class="c-dim">CNCF Kubernetes contributions</span>`,
+    `  <span class="help-cmd">cd projects</span>          <span class="c-dim">Side projects & academic work</span>`,
+    `  <span class="help-cmd">cd skills</span>            <span class="c-dim">Full tech stack breakdown</span>`,
+    `  <span class="help-cmd">whoami</span>               <span class="c-dim">Background & education</span>`,
+    `  <span class="help-cmd">ls</span>                   <span class="c-dim">List current directory</span>`,
+    `  <span class="help-cmd">cat paypal</span>           <span class="c-dim">PayPal experience details</span>`,
+    `  <span class="help-cmd">cat john-deere</span>       <span class="c-dim">John Deere experience details</span>`,
+    `  <span class="help-cmd">cat accenture</span>        <span class="c-dim">Accenture experience details</span>`,
+    `  <span class="help-cmd">clear</span>                <span class="c-dim">Clear terminal</span>`,
+    ``,
+  ],
+
+  whoami: () => [
+    ``,
+    `<span class="section-header">About</span>`,
+    ``,
+    `  <span class="c-bright bold">Backend Software Engineer</span> with <span class="metric">4+ years</span> of experience building`,
+    `  scalable distributed systems, data pipelines, and API integrations.`,
+    ``,
+    `  Currently at <span class="c-cyan bold">PayPal</span> — working on risk analytics, policy enforcement`,
+    `  engines, and merchant onboarding for the US market.`,
+    ``,
+    `  <span class="c-dim">───────────────────────────────────────────</span>`,
+    `  <span class="c-yellow">Education</span>`,
+    `  <span class="c-bright">MS Computer Science</span>  <span class="c-dim">·</span>  University at Buffalo  <span class="c-dim">· 2023–2024</span>`,
+    `  <span class="c-bright">BE Information Technology</span>  <span class="c-dim">·</span>  University of Mumbai  <span class="c-dim">· 2016–2020</span>`,
+    ``,
+    `  <span class="c-yellow">Coursework</span>`,
+    `  <span class="c-dim">Operating Systems · Machine Learning · Deep Learning</span>`,
+    `  <span class="c-dim">Data Mining · Algorithms · Software Engineering</span>`,
+    ``,
+  ],
+
+  'cd work-experience': () => {
+    currentPath = '~/work-experience';
+    pathEl.textContent = currentPath;
+    return [
+      ``,
+      `<span class="section-header">Work Experience</span>`,
+      ``,
+      `  <span class="c-green bold">▸</span> <span class="c-bright bold">PayPal</span>                 <span class="c-cyan">Backend Software Engineer</span>     <span class="c-dim">Oct 2025 – Present</span>`,
+      `  <span class="c-green bold">▸</span> <span class="c-bright bold">John Deere</span>             <span class="c-cyan">Backend Software Engineer</span>     <span class="c-dim">Oct 2022 – Jul 2023</span>`,
+      `  <span class="c-green bold">▸</span> <span class="c-bright bold">Accenture</span>              <span class="c-cyan">Software Engineer II</span>          <span class="c-dim">Dec 2020 – Oct 2022</span>`,
+      ``,
+      `  <span class="c-dim">Use</span> <span class="c-yellow">cat paypal</span><span class="c-dim">,</span> <span class="c-yellow">cat john-deere</span><span class="c-dim">, or</span> <span class="c-yellow">cat accenture</span> <span class="c-dim">for full details.</span>`,
+      ``,
+    ];
+  },
+
+  'cat paypal': () => [
+    ``,
+    `<span class="section-header">PayPal — Backend Software Engineer · Oct 2025–Present</span>`,
+    ``,
+    `  <span class="c-dim">Stack:</span> <span class="tag">Java</span><span class="tag">BigQuery</span><span class="tag">Oracle DB</span><span class="tag">Spring Boot</span><span class="tag">REST APIs</span><span class="tag blue">Risk & Compliance</span>`,
+    ``,
+    `  <span class="c-green">01</span>  Led data analysis across <span class="metric">27K+ business accounts</span> using multi-table`,
+    `      joins in <span class="c-cyan">BigQuery</span> and <span class="c-cyan">Oracle</span>, quantifying risk exposure and`,
+    `      directly informing backbook remediation and policy decisions.`,
+    ``,
+    `  <span class="c-green">02</span>  Partnered with risk & product stakeholders to translate analytics`,
+    `      into <span class="c-bright">actionable remediation and inference strategies</span>, bridging`,
+    `      the gap between data findings and business outcomes.`,
+    ``,
+    `  <span class="c-green">03</span>  Designed and implemented <span class="c-bright">product-based policy workflows</span> in Java`,
+    `      by translating regulatory requirements into service contracts`,
+    `      and <span class="c-cyan">REST APIs</span> — enabling new merchant product rollout in the`,
+    `      <span class="c-yellow bold">US market</span>.`,
+    ``,
+    `  <span class="c-green">04</span>  Built <span class="c-bright">end-to-end testing workflows</span> for onboarding and compliance`,
+    `      integrations; refactored action rules into modular microservice`,
+    `      components, significantly reducing test ambiguity & integration bugs.`,
+    ``,
+    `  <span class="c-green">05</span>  Authored technical documentation — <span class="c-bright">HLDs, test plans, API runbooks</span>`,
+    `      — codifying complex logic into reusable patterns and reducing`,
+    `      onboarding time for engineers and analysts.`,
+    ``,
+  ],
+
+  'cat john-deere': () => [
+    ``,
+    `<span class="section-header">John Deere — Backend Software Engineer · Oct 2022–Jul 2023</span>`,
+    ``,
+    `  <span class="c-dim">Stack:</span> <span class="tag">Java</span><span class="tag">Spring Boot</span><span class="tag">Docker</span><span class="tag blue">AWS</span><span class="tag yellow">GitHub Actions</span><span class="tag purple">Jenkins</span>`,
+    ``,
+    `  <span class="c-green">01</span>  Collaborated with cross-functional teams to develop UI features`,
+    `      for a <span class="c-bright">Java-based CRM</span>, improving customer-facing functionality.`,
+    ``,
+    `  <span class="c-green">02</span>  Led migration of a legacy app from <span class="c-cyan">IBM WebSphere → Tomcat</span>,`,
+    `      containerized with <span class="c-cyan">Docker</span> and deployed on <span class="c-yellow">AWS</span>.`,
+    `      <span class="c-dim">Result:</span> <span class="metric">↓ 15%</span> application startup time.`,
+    ``,
+    `  <span class="c-green">03</span>  Designed CI/CD pipelines from scratch for <span class="metric">4 applications</span>,`,
+    `      migrating from <span class="c-purple">Jenkins → GitHub Actions</span>.`,
+    ``,
+    `  <span class="c-green">04</span>  Improved compile/build time by <span class="metric">17%</span> via codebase refactoring`,
+    `      and cruft removal, while mentoring a junior developer.`,
+    ``,
+  ],
+
+  'cat accenture': () => [
+    ``,
+    `<span class="section-header">Accenture — Software Engineer II · Dec 2020–Oct 2022</span>`,
+    ``,
+    `  <span class="c-dim">Stack:</span> <span class="tag">Java</span><span class="tag">Spring Boot</span><span class="tag">Apache Kafka</span><span class="tag blue">REST APIs</span><span class="tag yellow">JUnit 5</span><span class="tag purple">Mockito</span>`,
+    ``,
+    `  <span class="c-green">01</span>  Developed <span class="metric">15+ RESTful APIs</span> enabling event-driven data pipelines`,
+    `      across distributed services, improving downstream system efficiency.`,
+    ``,
+    `  <span class="c-green">02</span>  Built <span class="c-cyan">Spring Boot + Kafka ETL pipelines</span> for real-time data`,
+    `      processing, enabling analytics and reporting across structured stores.`,
+    ``,
+    `  <span class="c-green">03</span>  Designed a health-check microservice with <span class="c-bright">email alerting</span> for`,
+    `      automated incident monitoring on mission-critical applications.`,
+    `      <span class="c-dim">Result:</span> <span class="metric">↓ 30%</span> downtime.`,
+    ``,
+    `  <span class="c-green">04</span>  Practiced <span class="c-bright">TDD with JUnit 5 & Mockito</span>, maintaining`,
+    `      <span class="metric">>80% code coverage</span> across the codebase.`,
+    ``,
+    `  <span class="c-green">05</span>  Mentored junior engineers via structured onboarding plans`,
+    `      and hands-on knowledge transfer sessions.`,
+    ``,
+  ],
+
+  'cd open-source': () => {
+    currentPath = '~/open-source';
+    pathEl.textContent = currentPath;
+    return [
+      ``,
+      `<span class="section-header">Open Source Contributions</span>`,
+      ``,
+      `  <span class="c-cyan bold">Cloud Native Computing Foundation (CNCF)</span>`,
+      `  <span class="c-bright">Kubernetes Release Team Shadow</span>`,
+      ``,
+      `  Contributed to <span class="c-yellow bold">Kubernetes v1.32</span> and <span class="c-yellow bold">v1.33</span> as a Release Team Shadow.`,
+      ``,
+      `  <span class="c-dim">Responsibilities:</span>`,
+      `  <span class="c-green">▸</span>  Drafted and edited official <span class="c-bright">release notes</span> for production Kubernetes releases`,
+      `  <span class="c-green">▸</span>  Authored <span class="c-bright">release blog posts</span> and public-facing release communications`,
+      `  <span class="c-green">▸</span>  Collaborated with global contributors across the Kubernetes ecosystem`,
+      ``,
+      `  <span class="tag blue">CNCF</span><span class="tag">Kubernetes</span><span class="tag yellow">Open Source</span><span class="tag purple">Technical Writing</span>`,
+      ``,
+    ];
+  },
+
+  'cd projects': () => {
+    currentPath = '~/projects';
+    pathEl.textContent = currentPath;
+    return [
+      ``,
+      `<span class="section-header">Projects</span>`,
+      ``,
+      `  <span class="c-bright bold">01. Pintos Operating System Enhancements</span>`,
+      `  <span class="tag">C</span><span class="tag">UNIX</span><span class="tag blue">File Systems</span><span class="tag purple">Threads</span>`,
+      ``,
+      `     Implemented thread scheduling policies, priority donation, and file`,
+      `     system features in the Pintos OS. Deep focus on concurrency,`,
+      `     synchronization primitives, and low-level systems programming.`,
+      ``,
+      `  <span class="c-dim">────────────────────────────────────────────────</span>`,
+      ``,
+      `  <span class="c-bright bold">02. Real-Time ASL Detection Application</span>`,
+      `  <span class="tag">Python</span><span class="tag blue">OpenCV</span><span class="tag yellow">MediaPipe</span><span class="tag purple">Flask</span>`,
+      ``,
+      `     Real-time American Sign Language recognition from webcam input.`,
+      `     Detects and classifies hand gestures into ASL alphabets using`,
+      `     computer vision. Deployed via Flask for live inference.`,
+      ``,
+    ];
+  },
+
+  'cd skills': () => {
+    currentPath = '~/skills';
+    pathEl.textContent = currentPath;
+    return [
+      ``,
+      `<span class="section-header">Tech Stack</span>`,
+      ``,
+      `  <span class="c-yellow bold">Languages</span>`,
+      `  <span class="tag">Java</span><span class="tag">Python</span><span class="tag blue">SQL</span><span class="tag purple">React</span>`,
+      ``,
+      `  <span class="c-yellow bold">Frameworks & Libraries</span>`,
+      `  <span class="tag">Spring Boot</span><span class="tag">Spring MVC</span><span class="tag">Hibernate</span><span class="tag blue">JPA</span><span class="tag purple">JMS</span><span class="tag yellow">scikit-learn</span><span class="tag">PyTorch</span>`,
+      ``,
+      `  <span class="c-yellow bold">Databases</span>`,
+      `  <span class="tag">PostgreSQL</span><span class="tag">MySQL</span><span class="tag blue">Oracle</span><span class="tag yellow">BigQuery</span><span class="tag purple">MongoDB</span><span class="tag">DynamoDB</span><span class="tag blue">Redis</span>`,
+      ``,
+      `  <span class="c-yellow bold">Cloud & Infrastructure</span>`,
+      `  <span class="tag blue">AWS</span><span class="tag yellow">Google Cloud</span><span class="tag">Docker</span><span class="tag purple">Kubernetes</span><span class="tag">Apache Kafka</span>`,
+      ``,
+      `  <span class="c-yellow bold">CI/CD & Tooling</span>`,
+      `  <span class="tag">GitHub Actions</span><span class="tag blue">Jenkins</span><span class="tag yellow">Datadog</span><span class="tag purple">Git</span>`,
+      ``,
+      `  <span class="c-yellow bold">Testing</span>`,
+      `  <span class="tag">JUnit 5</span><span class="tag blue">Mockito</span><span class="tag yellow">PyTest</span><span class="tag">TDD</span>`,
+      ``,
+    ];
+  },
+
+  ls: () => {
+    if (currentPath === '~/work-experience') {
+      return [
+        ``,
+        `  <span class="c-cyan">paypal</span>        <span class="c-cyan">john-deere</span>        <span class="c-cyan">accenture</span>`,
+        `  <span class="c-dim">(use cat <name> to read)</span>`,
+        ``,
+      ];
+    }
+    return [
+      ``,
+      `  <span class="c-cyan">work-experience/</span>   <span class="c-cyan">open-source/</span>   <span class="c-cyan">projects/</span>   <span class="c-cyan">skills/</span>`,
+      ``,
+    ];
+  },
+
+  'cd ~': () => {
+    currentPath = '~';
+    pathEl.textContent = currentPath;
+    return [``, `  <span class="c-green">Back home.</span> Type <span class="c-yellow">help</span> to see all commands.`, ``];
+  },
+
+  'cd ..': () => {
+    currentPath = '~';
+    pathEl.textContent = currentPath;
+    return [``, `  <span class="c-green">↑ Back to home.</span>`, ``];
+  },
+
+  clear: () => {
+    output.innerHTML = '';
+    return [];
+  },
+};
+
+// Aliases
+COMMANDS['cat paypal'] = COMMANDS['cat paypal'];
+COMMANDS['open-source'] = COMMANDS['cd open-source'];
+
+function printLine(html, delay = 0) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const div = document.createElement('div');
+      div.className = 'line fade-in';
+      div.innerHTML = html;
+      output.appendChild(div);
+      body.scrollTop = body.scrollHeight;
+      resolve();
+    }, delay);
+  });
+}
+
+async function runBootSequence() {
+  for (const item of BOOT_SEQUENCE) {
+    await printLine(item.text, item.delay);
+  }
+  input.focus();
+}
+
+async function runCommand(cmd) {
+  const trimmed = cmd.trim().toLowerCase();
+
+  // Echo the command
+  const echoDiv = document.createElement('div');
+  echoDiv.className = 'line prompt-line';
+  echoDiv.innerHTML = `<span class="prompt"><span class="user">visitor</span><span class="at">@</span><span class="host">portfolio</span><span style="color:var(--text-dim)">:</span><span class="path">${currentPath}</span><span class="arrow">$ </span></span><span class="c-bright">${escHtml(cmd)}</span>`;
+  output.appendChild(echoDiv);
+
+  if (!trimmed) return;
+
+  // Look up command
+  let handler = COMMANDS[trimmed];
+
+  // Fuzzy match cd commands
+  if (!handler) {
+    if (trimmed.startsWith('cd ')) handler = COMMANDS[trimmed];
+    if (!handler && trimmed.startsWith('cat ')) handler = COMMANDS[trimmed];
+  }
+
+  if (handler) {
+    const lines = handler();
+    for (const line of lines) {
+      await printLine(line, 18);
+    }
+  } else {
+    await printLine(`  <span class="c-red">bash: ${escHtml(trimmed)}: command not found.</span>  <span class="c-dim">Try</span> <span class="c-yellow">help</span>`, 0);
+    await printLine(``, 0);
+  }
+
+  body.scrollTop = body.scrollHeight;
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+input.addEventListener('keydown', async (e) => {
+  if (e.key === 'Enter') {
+    const val = input.value;
+    input.value = '';
+    if (val.trim()) {
+      cmdHistory.unshift(val);
+      histIdx = -1;
+    }
+    await runCommand(val);
+  }
+  if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (histIdx < cmdHistory.length - 1) {
+      histIdx++;
+      input.value = cmdHistory[histIdx];
+    }
+  }
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (histIdx > 0) {
+      histIdx--;
+      input.value = cmdHistory[histIdx];
+    } else {
+      histIdx = -1;
+      input.value = '';
+    }
+  }
+  // Tab autocomplete
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const val = input.value.toLowerCase();
+    const allCmds = Object.keys(COMMANDS).concat(['help','whoami','clear','ls']);
+    const match = allCmds.find(c => c.startsWith(val) && c !== val);
+    if (match) input.value = match;
+  }
+});
+
+// Click anywhere to focus input
+document.getElementById('terminal-body').addEventListener('click', () => input.focus());
+
+// Hint panel — clickable buttons for recruiters
+document.querySelectorAll('.hint-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const cmd = btn.getAttribute('data-cmd');
+    // Flash button green
+    btn.style.borderColor = 'rgba(0,255,136,0.5)';
+    btn.style.background = 'rgba(0,255,136,0.06)';
+    setTimeout(() => { btn.style.borderColor = ''; btn.style.background = ''; }, 400);
+    input.focus();
+    input.value = '';
+    if (cmd.trim()) { cmdHistory.unshift(cmd); histIdx = -1; }
+    await runCommand(cmd);
+  });
+});
+
+document.getElementById('dismiss-hint').addEventListener('click', () => {
+  const panel = document.getElementById('hint-panel');
+  panel.style.opacity = '0';
+  panel.style.transform = 'translateY(6px)';
+  panel.style.transition = 'opacity 0.3s, transform 0.3s';
+  setTimeout(() => panel.classList.add('hidden'), 300);
+});
+
+// Boot
+runBootSequence();
+</script>
+</body>
+</html>
