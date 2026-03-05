@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>~/portfolio</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -23,17 +23,23 @@
     --prompt-color: #00ff88;
   }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    overscroll-behavior: none;
+  }
 
   body {
     background: var(--bg);
     font-family: 'JetBrains Mono', monospace;
     color: var(--text);
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 20px;
+    padding: 16px;
     overflow-x: hidden;
   }
 
@@ -48,7 +54,6 @@
     z-index: 0;
   }
 
-  /* Scanline effect */
   body::after {
     content: '';
     position: fixed;
@@ -77,20 +82,24 @@
       0 0 60px rgba(0,255,136,0.03);
     position: relative;
     z-index: 1;
+    flex-shrink: 0;
   }
 
   .terminal-titlebar {
     background: #131820;
-    padding: 12px 16px;
+    padding: 10px 14px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     border-bottom: 1px solid var(--border);
     user-select: none;
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
 
   .dot {
-    width: 12px; height: 12px;
+    width: 11px; height: 11px;
     border-radius: 50%;
     flex-shrink: 0;
   }
@@ -99,19 +108,36 @@
   .dot-green { background: #28c840; }
 
   .terminal-title {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-dim);
     margin-left: auto;
     margin-right: auto;
     letter-spacing: 0.05em;
   }
 
+  /* Mobile keyboard toggle button */
+  .keyboard-toggle {
+    display: none;
+    background: rgba(0,255,136,0.1);
+    border: 1px solid rgba(0,255,136,0.25);
+    border-radius: 5px;
+    color: var(--green);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    cursor: pointer;
+    white-space: nowrap;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+
   .terminal-body {
-    padding: 20px 24px;
-    min-height: 520px;
-    max-height: 80vh;
+    padding: 16px 20px;
+    min-height: 380px;
+    max-height: 65vh;
     overflow-y: auto;
     scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
   }
 
   .terminal-body::-webkit-scrollbar { width: 4px; }
@@ -120,7 +146,7 @@
 
   .line {
     line-height: 1.7;
-    font-size: 13.5px;
+    font-size: 13px;
     white-space: pre-wrap;
     word-break: break-word;
   }
@@ -129,15 +155,17 @@
 
   .prompt-line {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     gap: 0;
-    margin-top: 14px;
+    margin-top: 12px;
+    flex-wrap: wrap;
   }
 
   .prompt {
     color: var(--green);
     flex-shrink: 0;
-    font-size: 13.5px;
+    font-size: 13px;
+    white-space: nowrap;
   }
 
   .prompt .user { color: var(--cyan); }
@@ -149,7 +177,8 @@
   #input-line {
     display: flex;
     align-items: center;
-    margin-top: 14px;
+    margin-top: 12px;
+    cursor: text;
   }
 
   #cmd-input {
@@ -158,17 +187,24 @@
     outline: none;
     color: var(--text-bright);
     font-family: 'JetBrains Mono', monospace;
-    font-size: 13.5px;
+    font-size: 13px;
     flex: 1;
     caret-color: var(--green);
     padding: 0;
     margin-left: 2px;
+    /* Prevent iOS zoom on input focus */
+    font-size: max(13px, 16px);
+  }
+
+  /* Scale down after focus to avoid layout shift */
+  @media (max-width: 600px) {
+    #cmd-input { font-size: 16px; }
   }
 
   .cursor {
     display: inline-block;
     width: 8px;
-    height: 15px;
+    height: 14px;
     background: var(--green);
     animation: blink 1s step-end infinite;
     vertical-align: middle;
@@ -193,13 +229,13 @@
   .c-white { color: #fff; }
 
   .bold { font-weight: 700; }
-  .indent { padding-left: 24px; }
-  .indent2 { padding-left: 48px; }
+  .indent { padding-left: 20px; }
+  .indent2 { padding-left: 40px; }
 
   .section-header {
     color: var(--cyan);
     font-weight: 700;
-    font-size: 11px;
+    font-size: 10px;
     letter-spacing: 0.15em;
     text-transform: uppercase;
     border-bottom: 1px solid rgba(0,212,255,0.2);
@@ -213,8 +249,8 @@
     background: rgba(0,255,136,0.08);
     border: 1px solid rgba(0,255,136,0.2);
     color: var(--green);
-    font-size: 11px;
-    padding: 1px 7px;
+    font-size: 10px;
+    padding: 1px 6px;
     border-radius: 3px;
     margin: 2px 2px;
   }
@@ -257,20 +293,9 @@
 
   .help-cmd {
     display: inline-block;
-    min-width: 220px;
+    min-width: 200px;
     color: var(--yellow);
     font-weight: 500;
-  }
-
-  .typewriter {
-    overflow: hidden;
-    white-space: nowrap;
-    animation: typing 0.4s steps(40) forwards;
-  }
-
-  @keyframes typing {
-    from { max-width: 0; }
-    to { max-width: 100%; }
   }
 
   .fade-in {
@@ -282,35 +307,24 @@
     to { opacity: 1; transform: translateY(0); }
   }
 
-  .progress-bar {
-    display: inline-block;
-    height: 6px;
-    background: var(--green);
-    border-radius: 3px;
-    animation: grow 1s ease forwards;
-  }
-
-  @keyframes grow {
-    from { width: 0; }
-  }
-
   /* ── Recruiter hint panel ── */
   .hint-panel {
     width: 100%;
     max-width: 860px;
-    margin-top: 14px;
-    background: rgba(15,18,24,0.85);
+    margin-top: 12px;
+    background: rgba(15,18,24,0.92);
     border: 1px solid rgba(0,212,255,0.15);
     border-radius: 10px;
-    padding: 14px 20px 12px;
+    padding: 12px 16px 12px;
     position: relative;
     z-index: 1;
     backdrop-filter: blur(6px);
+    flex-shrink: 0;
   }
 
   .hint-label {
     font-size: 10px;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--cyan);
     opacity: 0.7;
@@ -318,6 +332,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    flex-wrap: wrap;
   }
 
   .hint-label::before {
@@ -328,6 +343,7 @@
     background: var(--cyan);
     opacity: 0.6;
     animation: blink 2s ease-in-out infinite;
+    flex-shrink: 0;
   }
 
   .hint-label .dismiss {
@@ -342,9 +358,9 @@
   .hint-label .dismiss:hover { opacity: 0.9; }
 
   .hint-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 7px;
   }
 
   .hint-btn {
@@ -353,47 +369,92 @@
     border-radius: 6px;
     color: var(--text-bright);
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    padding: 6px 14px;
+    font-size: 11px;
+    padding: 8px 12px;
     cursor: pointer;
     transition: all 0.18s ease;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 7px;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
-  .hint-btn:hover {
+  .hint-btn:hover, .hint-btn:active {
     background: rgba(0,212,255,0.07);
     border-color: rgba(0,212,255,0.3);
     color: #fff;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
   }
 
-  .hint-btn:active { transform: translateY(0); }
-
   .hint-btn .btn-icon {
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .hint-btn .btn-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .hint-btn .btn-cmd {
     color: var(--yellow);
-    font-size: 11px;
-    opacity: 0.6;
+    font-size: 10px;
+    opacity: 0.5;
+    flex-shrink: 0;
+    display: none; /* hidden on mobile to save space */
   }
 
-  .hint-panel.hidden {
-    display: none;
+  .hint-panel.hidden { display: none; }
+
+  /* ── ASCII art: hidden on very small screens ── */
+  .ascii-hide-mobile { display: block; }
+
+  /* ── Responsive breakpoints ── */
+  @media (max-width: 700px) {
+    body { padding: 10px 10px 16px; }
+
+    .ascii-hide-mobile { display: none; }
+
+    .terminal-body {
+      padding: 12px 14px;
+      max-height: 55vh;
+      min-height: 300px;
+    }
+
+    .line, .prompt, #cmd-input {
+      font-size: 12.5px;
+    }
+
+    .section-header { font-size: 9.5px; }
+    .tag { font-size: 9.5px; padding: 1px 5px; }
+
+    .help-cmd { min-width: 160px; }
+
+    .keyboard-toggle { display: inline-flex; align-items: center; }
+
+    .hint-buttons {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .hint-btn { font-size: 11px; padding: 9px 10px; }
   }
 
-  /* Mobile */
-  @media (max-width: 600px) {
-    body { padding: 10px; }
-    .terminal-body { padding: 14px 16px; font-size: 12px; }
-    .line, .prompt, #cmd-input { font-size: 12px; }
-    .hint-btn { font-size: 11px; padding: 5px 10px; }
+  @media (max-width: 400px) {
+    .hint-buttons {
+      grid-template-columns: 1fr 1fr;
+    }
+    .hint-btn { font-size: 10.5px; padding: 8px 8px; gap: 5px; }
+    .terminal-title { font-size: 10px; }
+  }
+
+  /* When virtual keyboard is open (approximated via viewport height) */
+  @media (max-height: 500px) {
+    .terminal-body { max-height: 40vh; }
   }
 </style>
 </head>
@@ -404,7 +465,8 @@
     <div class="dot dot-red"></div>
     <div class="dot dot-yellow"></div>
     <div class="dot dot-green"></div>
-    <span class="terminal-title">visitor@portfolio — bash — 80×24</span>
+    <span class="terminal-title">visitor@portfolio — bash</span>
+    <button class="keyboard-toggle" id="keyboard-toggle" aria-label="Open keyboard">⌨ type</button>
   </div>
   <div class="terminal-body" id="terminal-body">
     <div id="output"></div>
@@ -412,7 +474,7 @@
       <span class="prompt">
         <span class="user">visitor</span><span class="at">@</span><span class="host">portfolio</span><span style="color:var(--text-dim)">:</span><span class="path" id="current-path">~</span><span class="arrow">$ </span>
       </span>
-      <input type="text" id="cmd-input" autofocus autocomplete="off" spellcheck="false" placeholder="">
+      <input type="text" id="cmd-input" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="none" enterkeyhint="go" placeholder="">
     </div>
   </div>
 </div>
@@ -420,33 +482,33 @@
 <!-- Recruiter hint panel -->
 <div class="hint-panel" id="hint-panel">
   <div class="hint-label">
-    👋 Not a developer? Click any button below to explore
+    👋 Not a dev? Tap any button to explore
     <span class="dismiss" id="dismiss-hint" title="Dismiss">✕ dismiss</span>
   </div>
   <div class="hint-buttons">
     <button class="hint-btn" data-cmd="whoami">
-      <span class="btn-icon">🙋</span> About Me <span class="btn-cmd">whoami</span>
+      <span class="btn-icon">🙋</span><span class="btn-label">About Me</span>
     </button>
     <button class="hint-btn" data-cmd="cd work-experience">
-      <span class="btn-icon">💼</span> Work Experience <span class="btn-cmd">cd work-experience</span>
+      <span class="btn-icon">💼</span><span class="btn-label">Experience</span>
     </button>
     <button class="hint-btn" data-cmd="cat paypal">
-      <span class="btn-icon">🏢</span> Current Role · PayPal <span class="btn-cmd">cat paypal</span>
+      <span class="btn-icon">🏢</span><span class="btn-label">PayPal</span>
     </button>
     <button class="hint-btn" data-cmd="cat john-deere">
-      <span class="btn-icon">🚜</span> John Deere <span class="btn-cmd">cat john-deere</span>
+      <span class="btn-icon">🚜</span><span class="btn-label">John Deere</span>
     </button>
     <button class="hint-btn" data-cmd="cat accenture">
-      <span class="btn-icon">📐</span> Accenture <span class="btn-cmd">cat accenture</span>
+      <span class="btn-icon">📐</span><span class="btn-label">Accenture</span>
     </button>
     <button class="hint-btn" data-cmd="cd skills">
-      <span class="btn-icon">⚙️</span> Tech Skills <span class="btn-cmd">cd skills</span>
+      <span class="btn-icon">⚙️</span><span class="btn-label">Tech Skills</span>
     </button>
     <button class="hint-btn" data-cmd="cd open-source">
-      <span class="btn-icon">🌐</span> Open Source <span class="btn-cmd">cd open-source</span>
+      <span class="btn-icon">🌐</span><span class="btn-label">Open Source</span>
     </button>
     <button class="hint-btn" data-cmd="cd projects">
-      <span class="btn-icon">🔬</span> Projects <span class="btn-cmd">cd projects</span>
+      <span class="btn-icon">🔬</span><span class="btn-label">Projects</span>
     </button>
   </div>
 </div>
@@ -456,13 +518,28 @@ const output = document.getElementById('output');
 const input = document.getElementById('cmd-input');
 const body = document.getElementById('terminal-body');
 const pathEl = document.getElementById('current-path');
+const kbToggle = document.getElementById('keyboard-toggle');
 
 let currentPath = '~';
 let cmdHistory = [];
 let histIdx = -1;
 
-const BOOT_SEQUENCE = [
-  { text: `<span class="ascii-art">  ██████╗  ██████╗ ██████╗ ████████╗███████╗ ██████╗ ██╗     ██╗ ██████╗ \n  ██╔══██╗██╔═══██╗██╔══██╗╚══██╔══╝██╔════╝██╔═══██╗██║     ██║██╔═══██╗\n  ██████╔╝██║   ██║██████╔╝   ██║   █████╗  ██║   ██║██║     ██║██║   ██║\n  ██╔═══╝ ██║   ██║██╔══██╗   ██║   ██╔══╝  ██║   ██║██║     ██║██║   ██║\n  ██║     ╚██████╔╝██║  ██║   ██║   ██║     ╚██████╔╝███████╗██║╚██████╔╝\n  ╚═╝      ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚═╝      ╚═════╝ ╚══════╝╚═╝ ╚═════╝ </span>`, delay: 0 },
+// Detect mobile
+const isMobile = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent) || window.innerWidth < 700;
+
+const BOOT_SEQUENCE = isMobile ? [
+  // Condensed mobile boot — skip giant ASCII art
+  { text: `<span class="c-bright bold" style="font-size:15px; letter-spacing:0.06em">  PORTFOLIO</span>  <span style="font-size:16px">👩‍💻</span>`, delay: 0 },
+  { text: `<span class="c-dim">  ──────────────────────────────────────</span>`, delay: 150 },
+  { text: `<span class="c-bright bold">  Backend Software Engineer</span>  <span class="c-dim">·</span>  <span class="c-cyan">PayPal</span>`, delay: 280 },
+  { text: `<span class="c-purple">  MS Computer Science, UB</span>`, delay: 380 },
+  { text: `<span class="c-dim">  Java · BigQuery · Spring Boot · AWS</span>`, delay: 480 },
+  { text: `<span class="c-dim">  ──────────────────────────────────────</span>`, delay: 580 },
+  { text: ``, delay: 680 },
+  { text: `<span class="c-green bold">  Ready.</span> <span class="c-dim">Tap buttons below or type</span> <span class="c-yellow">help</span>`, delay: 750 },
+  { text: ``, delay: 820 },
+] : [
+  { text: `<span class="ascii-art ascii-hide-mobile">  ██████╗  ██████╗ ██████╗ ████████╗███████╗ ██████╗ ██╗     ██╗ ██████╗ \n  ██╔══██╗██╔═══██╗██╔══██╗╚══██╔══╝██╔════╝██╔═══██╗██║     ██║██╔═══██╗\n  ██████╔╝██║   ██║██████╔╝   ██║   █████╗  ██║   ██║██║     ██║██║   ██║\n  ██╔═══╝ ██║   ██║██╔══██╗   ██║   ██╔══╝  ██║   ██║██║     ██║██║   ██║\n  ██║     ╚██████╔╝██║  ██║   ██║   ██║     ╚██████╔╝███████╗██║╚██████╔╝\n  ╚═╝      ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚═╝      ╚═════╝ ╚══════╝╚═╝ ╚═════╝ </span>`, delay: 0 },
   { text: `<span style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#ffb7c5; letter-spacing:0.35em; opacity:0.9; display:block; margin-top:2px">
   ╔═╗╔╗╔╔═╗╦ ╦╔═╗  ╦ ╦╔═╗╔╦╗╔═╗╦  ╦
   ╚═╗║║║║╣ ╠═╣╠═╣  ╚╦╝╠═╣ ║║╠═╣╚╗╔╝
@@ -512,7 +589,7 @@ const COMMANDS = {
     `  Currently at <span class="c-cyan bold">PayPal</span> — working on risk analytics, policy enforcement`,
     `  engines, and merchant onboarding for the US market.`,
     ``,
-    `  <span class="c-dim">───────────────────────────────────────────</span>`,
+    `  <span class="c-dim">──────────────────────────────────────────</span>`,
     `  <span class="c-yellow">Education</span>`,
     `  <span class="c-bright">MS Computer Science</span>  <span class="c-dim">·</span>  University at Buffalo  <span class="c-dim">· 2023–2024</span>`,
     `  <span class="c-bright">BE Information Technology</span>  <span class="c-dim">·</span>  University of Mumbai  <span class="c-dim">· 2016–2020</span>`,
@@ -530,86 +607,84 @@ const COMMANDS = {
       ``,
       `<span class="section-header">Work Experience</span>`,
       ``,
-      `  <span class="c-green bold">▸</span> <span class="c-bright bold">PayPal</span>                 <span class="c-cyan">Backend Software Engineer</span>     <span class="c-dim">Oct 2025 – Present</span>`,
-      `  <span class="c-green bold">▸</span> <span class="c-bright bold">John Deere</span>             <span class="c-cyan">Backend Software Engineer</span>     <span class="c-dim">Oct 2022 – Jul 2023</span>`,
-      `  <span class="c-green bold">▸</span> <span class="c-bright bold">Accenture</span>              <span class="c-cyan">Software Engineer II</span>          <span class="c-dim">Dec 2020 – Oct 2022</span>`,
+      `  <span class="c-green bold">▸</span> <span class="c-bright bold">PayPal</span>`,
+      `    <span class="c-cyan">Backend Software Engineer</span>  <span class="c-dim">Oct 2025–Present</span>`,
       ``,
-      `  <span class="c-dim">Use</span> <span class="c-yellow">cat paypal</span><span class="c-dim">,</span> <span class="c-yellow">cat john-deere</span><span class="c-dim">, or</span> <span class="c-yellow">cat accenture</span> <span class="c-dim">for full details.</span>`,
+      `  <span class="c-green bold">▸</span> <span class="c-bright bold">John Deere</span>`,
+      `    <span class="c-cyan">Backend Software Engineer</span>  <span class="c-dim">Oct 2022–Jul 2023</span>`,
+      ``,
+      `  <span class="c-green bold">▸</span> <span class="c-bright bold">Accenture</span>`,
+      `    <span class="c-cyan">Software Engineer II</span>  <span class="c-dim">Dec 2020–Oct 2022</span>`,
+      ``,
+      `  <span class="c-dim">Use</span> <span class="c-yellow">cat paypal</span><span class="c-dim">,</span> <span class="c-yellow">cat john-deere</span><span class="c-dim">, or</span> <span class="c-yellow">cat accenture</span>`,
       ``,
     ];
   },
 
   'cat paypal': () => [
     ``,
-    `<span class="section-header">PayPal — Backend Software Engineer · Oct 2025–Present</span>`,
+    `<span class="section-header">PayPal — Backend SE · Oct 2025–Present</span>`,
     ``,
-    `  <span class="c-dim">Stack:</span> <span class="tag">Java</span><span class="tag">BigQuery</span><span class="tag">Oracle DB</span><span class="tag">Spring Boot</span><span class="tag">REST APIs</span><span class="tag blue">Risk & Compliance</span>`,
+    `  <span class="c-dim">Stack:</span> <span class="tag">Java</span><span class="tag">BigQuery</span><span class="tag">Oracle DB</span><span class="tag">Spring Boot</span><span class="tag blue">Risk & Compliance</span>`,
     ``,
-    `  <span class="c-green">01</span>  Led data analysis across <span class="metric">27K+ business accounts</span> using multi-table`,
-    `      joins in <span class="c-cyan">BigQuery</span> and <span class="c-cyan">Oracle</span>, quantifying risk exposure and`,
-    `      directly informing backbook remediation and policy decisions.`,
+    `  <span class="c-green">01</span>  Led data analysis across <span class="metric">27K+ business accounts</span> using`,
+    `      multi-table joins in <span class="c-cyan">BigQuery</span> and <span class="c-cyan">Oracle</span>, quantifying`,
+    `      risk exposure and informing policy decisions.`,
     ``,
-    `  <span class="c-green">02</span>  Partnered with risk & product stakeholders to translate analytics`,
-    `      into <span class="c-bright">actionable remediation and inference strategies</span>, bridging`,
-    `      the gap between data findings and business outcomes.`,
+    `  <span class="c-green">02</span>  Partnered with risk & product stakeholders to translate`,
+    `      analytics into <span class="c-bright">actionable remediation strategies</span>.`,
     ``,
-    `  <span class="c-green">03</span>  Designed and implemented <span class="c-bright">product-based policy workflows</span> in Java`,
-    `      by translating regulatory requirements into service contracts`,
-    `      and <span class="c-cyan">REST APIs</span> — enabling new merchant product rollout in the`,
-    `      <span class="c-yellow bold">US market</span>.`,
+    `  <span class="c-green">03</span>  Designed <span class="c-bright">product-based policy workflows</span> in Java by`,
+    `      translating regulatory requirements into <span class="c-cyan">REST APIs</span>`,
+    `      — enabling merchant product rollout in the <span class="c-yellow bold">US market</span>.`,
     ``,
-    `  <span class="c-green">04</span>  Built <span class="c-bright">end-to-end testing workflows</span> for onboarding and compliance`,
-    `      integrations; refactored action rules into modular microservice`,
-    `      components, significantly reducing test ambiguity & integration bugs.`,
+    `  <span class="c-green">04</span>  Built <span class="c-bright">end-to-end testing workflows</span>; refactored action`,
+    `      rules into modular microservice components.`,
     ``,
-    `  <span class="c-green">05</span>  Authored technical documentation — <span class="c-bright">HLDs, test plans, API runbooks</span>`,
-    `      — codifying complex logic into reusable patterns and reducing`,
+    `  <span class="c-green">05</span>  Authored <span class="c-bright">HLDs, test plans, API runbooks</span> reducing`,
     `      onboarding time for engineers and analysts.`,
     ``,
   ],
 
   'cat john-deere': () => [
     ``,
-    `<span class="section-header">John Deere — Backend Software Engineer · Oct 2022–Jul 2023</span>`,
+    `<span class="section-header">John Deere — Backend SE · Oct 2022–Jul 2023</span>`,
     ``,
     `  <span class="c-dim">Stack:</span> <span class="tag">Java</span><span class="tag">Spring Boot</span><span class="tag">Docker</span><span class="tag blue">AWS</span><span class="tag yellow">GitHub Actions</span><span class="tag purple">Jenkins</span>`,
     ``,
-    `  <span class="c-green">01</span>  Collaborated with cross-functional teams to develop UI features`,
-    `      for a <span class="c-bright">Java-based CRM</span>, improving customer-facing functionality.`,
+    `  <span class="c-green">01</span>  Developed UI features for a <span class="c-bright">Java-based CRM</span>,`,
+    `      improving customer-facing functionality.`,
     ``,
-    `  <span class="c-green">02</span>  Led migration of a legacy app from <span class="c-cyan">IBM WebSphere → Tomcat</span>,`,
-    `      containerized with <span class="c-cyan">Docker</span> and deployed on <span class="c-yellow">AWS</span>.`,
-    `      <span class="c-dim">Result:</span> <span class="metric">↓ 15%</span> application startup time.`,
+    `  <span class="c-green">02</span>  Led migration <span class="c-cyan">IBM WebSphere → Tomcat</span>,`,
+    `      containerized with <span class="c-cyan">Docker</span> on <span class="c-yellow">AWS</span>.`,
+    `      <span class="c-dim">Result:</span> <span class="metric">↓ 15%</span> startup time.`,
     ``,
-    `  <span class="c-green">03</span>  Designed CI/CD pipelines from scratch for <span class="metric">4 applications</span>,`,
-    `      migrating from <span class="c-purple">Jenkins → GitHub Actions</span>.`,
+    `  <span class="c-green">03</span>  Designed CI/CD pipelines for <span class="metric">4 applications</span>,`,
+    `      migrating <span class="c-purple">Jenkins → GitHub Actions</span>.`,
     ``,
-    `  <span class="c-green">04</span>  Improved compile/build time by <span class="metric">17%</span> via codebase refactoring`,
-    `      and cruft removal, while mentoring a junior developer.`,
+    `  <span class="c-green">04</span>  Improved compile/build time by <span class="metric">17%</span> via refactoring.`,
     ``,
   ],
 
   'cat accenture': () => [
     ``,
-    `<span class="section-header">Accenture — Software Engineer II · Dec 2020–Oct 2022</span>`,
+    `<span class="section-header">Accenture — SE II · Dec 2020–Oct 2022</span>`,
     ``,
-    `  <span class="c-dim">Stack:</span> <span class="tag">Java</span><span class="tag">Spring Boot</span><span class="tag">Apache Kafka</span><span class="tag blue">REST APIs</span><span class="tag yellow">JUnit 5</span><span class="tag purple">Mockito</span>`,
+    `  <span class="c-dim">Stack:</span> <span class="tag">Java</span><span class="tag">Spring Boot</span><span class="tag">Apache Kafka</span><span class="tag blue">REST APIs</span><span class="tag yellow">JUnit 5</span>`,
     ``,
-    `  <span class="c-green">01</span>  Developed <span class="metric">15+ RESTful APIs</span> enabling event-driven data pipelines`,
-    `      across distributed services, improving downstream system efficiency.`,
+    `  <span class="c-green">01</span>  Developed <span class="metric">15+ RESTful APIs</span> enabling event-driven`,
+    `      data pipelines across distributed services.`,
     ``,
-    `  <span class="c-green">02</span>  Built <span class="c-cyan">Spring Boot + Kafka ETL pipelines</span> for real-time data`,
-    `      processing, enabling analytics and reporting across structured stores.`,
+    `  <span class="c-green">02</span>  Built <span class="c-cyan">Spring Boot + Kafka ETL pipelines</span> for`,
+    `      real-time data processing and analytics.`,
     ``,
-    `  <span class="c-green">03</span>  Designed a health-check microservice with <span class="c-bright">email alerting</span> for`,
-    `      automated incident monitoring on mission-critical applications.`,
+    `  <span class="c-green">03</span>  Health-check microservice with <span class="c-bright">email alerting</span>.`,
     `      <span class="c-dim">Result:</span> <span class="metric">↓ 30%</span> downtime.`,
     ``,
-    `  <span class="c-green">04</span>  Practiced <span class="c-bright">TDD with JUnit 5 & Mockito</span>, maintaining`,
-    `      <span class="metric">>80% code coverage</span> across the codebase.`,
+    `  <span class="c-green">04</span>  <span class="c-bright">TDD with JUnit 5 & Mockito</span>:`,
+    `      <span class="metric">>80% code coverage</span> maintained.`,
     ``,
-    `  <span class="c-green">05</span>  Mentored junior engineers via structured onboarding plans`,
-    `      and hands-on knowledge transfer sessions.`,
+    `  <span class="c-green">05</span>  Mentored junior engineers via structured onboarding.`,
     ``,
   ],
 
@@ -618,17 +693,17 @@ const COMMANDS = {
     pathEl.textContent = currentPath;
     return [
       ``,
-      `<span class="section-header">Open Source Contributions</span>`,
+      `<span class="section-header">Open Source</span>`,
       ``,
       `  <span class="c-cyan bold">Cloud Native Computing Foundation (CNCF)</span>`,
       `  <span class="c-bright">Kubernetes Release Team Shadow</span>`,
       ``,
-      `  Contributed to <span class="c-yellow bold">Kubernetes v1.32</span> and <span class="c-yellow bold">v1.33</span> as a Release Team Shadow.`,
+      `  Contributed to <span class="c-yellow bold">Kubernetes v1.32</span> and <span class="c-yellow bold">v1.33</span>`,
+      `  as a Release Team Shadow.`,
       ``,
-      `  <span class="c-dim">Responsibilities:</span>`,
-      `  <span class="c-green">▸</span>  Drafted and edited official <span class="c-bright">release notes</span> for production Kubernetes releases`,
-      `  <span class="c-green">▸</span>  Authored <span class="c-bright">release blog posts</span> and public-facing release communications`,
-      `  <span class="c-green">▸</span>  Collaborated with global contributors across the Kubernetes ecosystem`,
+      `  <span class="c-green">▸</span>  Drafted official <span class="c-bright">release notes</span> for production K8s releases`,
+      `  <span class="c-green">▸</span>  Authored <span class="c-bright">release blog posts</span> & public communications`,
+      `  <span class="c-green">▸</span>  Collaborated with global contributors`,
       ``,
       `  <span class="tag blue">CNCF</span><span class="tag">Kubernetes</span><span class="tag yellow">Open Source</span><span class="tag purple">Technical Writing</span>`,
       ``,
@@ -642,21 +717,20 @@ const COMMANDS = {
       ``,
       `<span class="section-header">Projects</span>`,
       ``,
-      `  <span class="c-bright bold">01. Pintos Operating System Enhancements</span>`,
+      `  <span class="c-bright bold">01. Pintos OS Enhancements</span>`,
       `  <span class="tag">C</span><span class="tag">UNIX</span><span class="tag blue">File Systems</span><span class="tag purple">Threads</span>`,
       ``,
-      `     Implemented thread scheduling policies, priority donation, and file`,
-      `     system features in the Pintos OS. Deep focus on concurrency,`,
-      `     synchronization primitives, and low-level systems programming.`,
+      `     Implemented thread scheduling, priority donation, and file`,
+      `     system features in Pintos OS. Focus on concurrency and`,
+      `     synchronization primitives.`,
       ``,
-      `  <span class="c-dim">────────────────────────────────────────────────</span>`,
+      `  <span class="c-dim">────────────────────────────────────────</span>`,
       ``,
-      `  <span class="c-bright bold">02. Real-Time ASL Detection Application</span>`,
+      `  <span class="c-bright bold">02. Real-Time ASL Detection</span>`,
       `  <span class="tag">Python</span><span class="tag blue">OpenCV</span><span class="tag yellow">MediaPipe</span><span class="tag purple">Flask</span>`,
       ``,
-      `     Real-time American Sign Language recognition from webcam input.`,
-      `     Detects and classifies hand gestures into ASL alphabets using`,
-      `     computer vision. Deployed via Flask for live inference.`,
+      `     Real-time American Sign Language recognition from webcam.`,
+      `     Classifies hand gestures into ASL alphabets using CV.`,
       ``,
     ];
   },
@@ -671,13 +745,13 @@ const COMMANDS = {
       `  <span class="c-yellow bold">Languages</span>`,
       `  <span class="tag">Java</span><span class="tag">Python</span><span class="tag blue">SQL</span><span class="tag purple">React</span>`,
       ``,
-      `  <span class="c-yellow bold">Frameworks & Libraries</span>`,
+      `  <span class="c-yellow bold">Frameworks</span>`,
       `  <span class="tag">Spring Boot</span><span class="tag">Spring MVC</span><span class="tag">Hibernate</span><span class="tag blue">JPA</span><span class="tag purple">JMS</span><span class="tag yellow">scikit-learn</span><span class="tag">PyTorch</span>`,
       ``,
       `  <span class="c-yellow bold">Databases</span>`,
       `  <span class="tag">PostgreSQL</span><span class="tag">MySQL</span><span class="tag blue">Oracle</span><span class="tag yellow">BigQuery</span><span class="tag purple">MongoDB</span><span class="tag">DynamoDB</span><span class="tag blue">Redis</span>`,
       ``,
-      `  <span class="c-yellow bold">Cloud & Infrastructure</span>`,
+      `  <span class="c-yellow bold">Cloud & Infra</span>`,
       `  <span class="tag blue">AWS</span><span class="tag yellow">Google Cloud</span><span class="tag">Docker</span><span class="tag purple">Kubernetes</span><span class="tag">Apache Kafka</span>`,
       ``,
       `  <span class="c-yellow bold">CI/CD & Tooling</span>`,
@@ -693,14 +767,15 @@ const COMMANDS = {
     if (currentPath === '~/work-experience') {
       return [
         ``,
-        `  <span class="c-cyan">paypal</span>        <span class="c-cyan">john-deere</span>        <span class="c-cyan">accenture</span>`,
-        `  <span class="c-dim">(use cat <name> to read)</span>`,
+        `  <span class="c-cyan">paypal</span>  <span class="c-cyan">john-deere</span>  <span class="c-cyan">accenture</span>`,
+        `  <span class="c-dim">(use cat &lt;name&gt; to read)</span>`,
         ``,
       ];
     }
     return [
       ``,
-      `  <span class="c-cyan">work-experience/</span>   <span class="c-cyan">open-source/</span>   <span class="c-cyan">projects/</span>   <span class="c-cyan">skills/</span>`,
+      `  <span class="c-cyan">work-experience/</span>  <span class="c-cyan">open-source/</span>`,
+      `  <span class="c-cyan">projects/</span>         <span class="c-cyan">skills/</span>`,
       ``,
     ];
   },
@@ -723,10 +798,6 @@ const COMMANDS = {
   },
 };
 
-// Aliases
-COMMANDS['cat paypal'] = COMMANDS['cat paypal'];
-COMMANDS['open-source'] = COMMANDS['cd open-source'];
-
 function printLine(html, delay = 0) {
   return new Promise(resolve => {
     setTimeout(() => {
@@ -744,33 +815,24 @@ async function runBootSequence() {
   for (const item of BOOT_SEQUENCE) {
     await printLine(item.text, item.delay);
   }
-  input.focus();
 }
 
 async function runCommand(cmd) {
   const trimmed = cmd.trim().toLowerCase();
 
-  // Echo the command
   const echoDiv = document.createElement('div');
   echoDiv.className = 'line prompt-line';
-  echoDiv.innerHTML = `<span class="prompt"><span class="user">visitor</span><span class="at">@</span><span class="host">portfolio</span><span style="color:var(--text-dim)">:</span><span class="path">${currentPath}</span><span class="arrow">$ </span></span><span class="c-bright">${escHtml(cmd)}</span>`;
+  echoDiv.innerHTML = `<span class="prompt"><span class="user">visitor</span><span class="at">@</span><span class="host">portfolio</span><span style="color:var(--text-dim)">:</span><span class="path">${pathEl.textContent}</span><span class="arrow">$ </span></span><span class="c-bright">${escHtml(cmd)}</span>`;
   output.appendChild(echoDiv);
 
   if (!trimmed) return;
 
-  // Look up command
   let handler = COMMANDS[trimmed];
-
-  // Fuzzy match cd commands
-  if (!handler) {
-    if (trimmed.startsWith('cd ')) handler = COMMANDS[trimmed];
-    if (!handler && trimmed.startsWith('cat ')) handler = COMMANDS[trimmed];
-  }
 
   if (handler) {
     const lines = handler();
     for (const line of lines) {
-      await printLine(line, 18);
+      await printLine(line, 16);
     }
   } else {
     await printLine(`  <span class="c-red">bash: ${escHtml(trimmed)}: command not found.</span>  <span class="c-dim">Try</span> <span class="c-yellow">help</span>`, 0);
@@ -788,30 +850,18 @@ input.addEventListener('keydown', async (e) => {
   if (e.key === 'Enter') {
     const val = input.value;
     input.value = '';
-    if (val.trim()) {
-      cmdHistory.unshift(val);
-      histIdx = -1;
-    }
+    if (val.trim()) { cmdHistory.unshift(val); histIdx = -1; }
     await runCommand(val);
   }
   if (e.key === 'ArrowUp') {
     e.preventDefault();
-    if (histIdx < cmdHistory.length - 1) {
-      histIdx++;
-      input.value = cmdHistory[histIdx];
-    }
+    if (histIdx < cmdHistory.length - 1) { histIdx++; input.value = cmdHistory[histIdx]; }
   }
   if (e.key === 'ArrowDown') {
     e.preventDefault();
-    if (histIdx > 0) {
-      histIdx--;
-      input.value = cmdHistory[histIdx];
-    } else {
-      histIdx = -1;
-      input.value = '';
-    }
+    if (histIdx > 0) { histIdx--; input.value = cmdHistory[histIdx]; }
+    else { histIdx = -1; input.value = ''; }
   }
-  // Tab autocomplete
   if (e.key === 'Tab') {
     e.preventDefault();
     const val = input.value.toLowerCase();
@@ -821,18 +871,38 @@ input.addEventListener('keydown', async (e) => {
   }
 });
 
-// Click anywhere to focus input
-document.getElementById('terminal-body').addEventListener('click', () => input.focus());
+// Mobile: tap terminal body to focus input
+document.getElementById('terminal-body').addEventListener('click', (e) => {
+  // Don't steal focus from links/buttons
+  if (e.target.tagName !== 'A' && e.target.tagName !== 'BUTTON') {
+    input.focus();
+  }
+});
 
-// Hint panel — clickable buttons for recruiters
+// Keyboard toggle button (mobile)
+kbToggle.addEventListener('click', () => {
+  input.focus();
+  // Scroll terminal to bottom to show input above keyboard
+  setTimeout(() => { body.scrollTop = body.scrollHeight; }, 300);
+});
+
+// When input is focused on mobile, scroll the page to keep input in view
+input.addEventListener('focus', () => {
+  setTimeout(() => {
+    body.scrollTop = body.scrollHeight;
+    document.getElementById('input-line').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 350);
+});
+
+// Hint panel buttons
 document.querySelectorAll('.hint-btn').forEach(btn => {
   btn.addEventListener('click', async () => {
     const cmd = btn.getAttribute('data-cmd');
-    // Flash button green
     btn.style.borderColor = 'rgba(0,255,136,0.5)';
     btn.style.background = 'rgba(0,255,136,0.06)';
     setTimeout(() => { btn.style.borderColor = ''; btn.style.background = ''; }, 400);
-    input.focus();
+    // On mobile, scroll terminal into view first
+    document.querySelector('.terminal-window').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     input.value = '';
     if (cmd.trim()) { cmdHistory.unshift(cmd); histIdx = -1; }
     await runCommand(cmd);
